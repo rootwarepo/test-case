@@ -6,100 +6,95 @@ from email.mime.text import MIMEText
 
 app = FastAPI()
 
-class User(BaseModel):
+class Kullanici(BaseModel):
     id: int
-    full_name: str
-    password: str
+    tam_ad: str
+    sifre: str
     email: str
-    role: str
+    rol: str
 
-class Task(BaseModel):
+class Gorev(BaseModel):
     id: int
-    task_time: str
-    task_title: str
-    task_subject: str
-    status: str  # Yeni olarak eklenen status parametresi
-    is_deleted: bool = False  # Yeni olarak eklenen is_deleted parametresi
+    gorev_zamani: str
+    gorev_basligi: str
+    gorev_konusu: str
+    durum: str  
+    silinmis_mi: bool = False
 
-users = []
-tasks = []
+kullanicilar = []
+gorevler = []
 
-def send_email(user_email):
-    # E-posta gönderen bilgileri
-    sender_email = "example@gmail.com"  # Kendi e-posta adresinizi girin
-    sender_password = "password"   # E-posta şifrenizi girin
+def email_gonder(email):
+    gonderen_email = "ornek@gmail.com"  
+    gonderen_sifre = "sifre"   
 
-    # E-posta başlık ve içeriği
-    subject = "New Task Added"
-    body = "Başarılı!"
+    konu = "Yeni Görev Eklendi"
+    icerik = "Başarılı!"
 
-    # E-posta oluşturma ve biçimlendirme
-    message = MIMEMultipart()
-    message['From'] = sender_email
-    message['To'] = user_email
-    message['Subject'] = subject
-    message.attach(MIMEText(body, 'plain'))
+    mesaj = MIMEMultipart()
+    mesaj['From'] = gonderen_email
+    mesaj['To'] = email
+    mesaj['Subject'] = konu
+    mesaj.attach(MIMEText(icerik, 'plain'))
 
-    # SMTP sunucusuna bağlanma ve e-posta gönderme
-    with smtplib.SMTP('smtp.gmail.com', 587) as server:  # SMTP sunucu bilgilerinizi girin
-        server.starttls()
-        server.login(sender_email, sender_password)
-        text = message.as_string()
-        server.sendmail(sender_email, user_email, text)
+    with smtplib.SMTP('smtp.gmail.com', 587) as sunucu:  
+        sunucu.starttls()
+        sunucu.login(gonderen_email, gonderen_sifre)
+        metin = mesaj.as_string()
+        sunucu.sendmail(gonderen_email, email, metin)
 
-def login_check(email: str, password: str):
-    for user in users:
-        if user.email == email and user.password == password:
-            return user.role
+def giris_kontrol(email: str, sifre: str):
+    for kullanici in kullanicilar:
+        if kullanici.email == email and kullanici.sifre == sifre:
+            return kullanici.rol
     return None
 
-@app.post("/add_user/")
-def add_user(user: User):
-    users.append(user)
-    return {"message": "User added successfully"}
+@app.post("/kullanici_ekle/")
+def kullanici_ekle(kullanici: Kullanici):
+    kullanicilar.append(kullanici)
+    return {"message": "Kullanıcı başarıyla eklendi"}
 
-@app.post("/add_task/")
-def add_task(email: str, password: str, task: Task):
-    role = login_check(email, password)
-    if not role:
-        raise HTTPException(status_code=401, detail="Login failed")
-    if role != "admin":
-        raise HTTPException(status_code=403, detail="Only admin can add tasks")
-    tasks.append(task)
-    for user in users:
-        #send_email(user.email)
+@app.post("/gorev_ekle/")
+def gorev_ekle(email: str, sifre: str, gorev: Gorev):
+    rol = giris_kontrol(email, sifre)
+    if not rol:
+        raise HTTPException(status_code=401, detail="Giriş başarısız")
+    if rol != "admin":
+        raise HTTPException(status_code=403, detail="Sadece yönetici görev ekleyebilir")
+    gorevler.append(gorev)
+    for kullanici in kullanicilar:
         pass
-    return {"message": "Task added successfully"}
+    return {"message": "Görev başarıyla eklendi"}
 
-@app.put("/update_task/{task_id}")
-def update_task(email: str, password: str, task_id: int, updated_task: Task):
-    role = login_check(email, password)
-    if not role:
-        raise HTTPException(status_code=401, detail="Login failed")
-    if role == "admin":
-        for task in tasks:
-            if task.id == task_id:
-                task.task_time = updated_task.task_time
-                task.task_title = updated_task.task_title
-                task.task_subject = updated_task.task_subject
-                task.status = updated_task.status  # Sadece admin tüm alanları güncelleyebilir
-                return {"message": f"Task {task_id} updated successfully"}
+@app.put("/gorev_guncelle/{gorev_id}")
+def gorev_guncelle(email: str, sifre: str, gorev_id: int, guncellenmis_gorev: Gorev):
+    rol = giris_kontrol(email, sifre)
+    if not rol:
+        raise HTTPException(status_code=401, detail="Giriş başarısız")
+    if rol == "admin":
+        for gorev in gorevler:
+            if gorev.id == gorev_id:
+                gorev.gorev_zamani = guncellenmis_gorev.gorev_zamani
+                gorev.gorev_basligi = guncellenmis_gorev.gorev_basligi
+                gorev.gorev_konusu = guncellenmis_gorev.gorev_konusu
+                gorev.durum = guncellenmis_gorev.durum  
+                return {"message": f"Görev {gorev_id} başarıyla güncellendi"}
     else:
-        for task in tasks:
-            if task.id == task_id:
-                task.status = updated_task.status  # Sadece status alanı güncellenebilir
-                return {"message": f"Task {task_id} status updated successfully"}
-    raise HTTPException(status_code=404, detail=f"Task with id {task_id} not found")
+        for gorev in gorevler:
+            if gorev.id == gorev_id:
+                gorev.durum = guncellenmis_gorev.durum  
+                return {"message": f"Görev {gorev_id} durumu başarıyla güncellendi"}
+    raise HTTPException(status_code=404, detail=f"ID'si {gorev_id} olan görev bulunamadı")
 
-@app.delete("/delete_task/{task_id}")
-def delete_task(email: str, password: str, task_id: int):
-    role = login_check(email, password)
-    if not role:
-        raise HTTPException(status_code=401, detail="Login failed")
-    if role != "admin":
-        raise HTTPException(status_code=403, detail="Only admin can delete tasks")
-    for task in tasks:
-        if task.id == task_id:
-            task.is_deleted = True
-            return {"message": f"Task {task_id} deleted successfully"}
-    raise HTTPException(status_code=404, detail=f"Task with id {task_id} not found")
+@app.delete("/gorev_sil/{gorev_id}")
+def gorev_sil(email: str, sifre: str, gorev_id: int):
+    rol = giris_kontrol(email, sifre)
+    if not rol:
+        raise HTTPException(status_code=401, detail="Giriş başarısız")
+    if rol != "admin":
+        raise HTTPException(status_code=403, detail="Sadece yönetici görev silebilir")
+    for gorev in gorevler:
+        if gorev.id == gorev_id:
+            gorev.silinmis_mi = True
+            return {"message": f"Görev {gorev_id} başarıyla silindi"}
+    raise HTTPException(status_code=404, detail=f"ID'si {gorev_id} olan görev bulunamadı")
