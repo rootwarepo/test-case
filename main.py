@@ -63,6 +63,7 @@ def gorev_ekle(email: str, sifre: str, gorev: Gorev):
         raise HTTPException(status_code=403, detail="Sadece yönetici görev ekleyebilir")
     gorevler.append(gorev)
     for kullanici in kullanicilar:
+        #email_gonder(kullanici.email)
         pass
     return {"message": "Görev başarıyla eklendi"}
 
