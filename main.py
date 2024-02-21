@@ -50,6 +50,14 @@ def giris_kontrol(email: str, sifre: str):
             return kullanici.rol
     return None
 
+@app.get("/kullanicilar/")
+def kullanicilari_goster():
+    return kullanicilar
+
+@app.get("/gorevler/")
+def gorevleri_goster():
+    return gorevler
+
 @app.post("/kullanici_ekle/")
 def kullanici_ekle(kullanici: Kullanici):
     kullanicilar.append(kullanici)
