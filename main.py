@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from typing import Optional
 from pydantic import BaseModel
 import smtplib
 from email.mime.multipart import MIMEMultipart
@@ -14,12 +15,12 @@ class Kullanici(BaseModel):
     rol: str
 
 class Gorev(BaseModel):
-    id: int
-    gorev_zamani: str
-    gorev_basligi: str
-    gorev_konusu: str
-    durum: str  
-    silinmis_mi: bool = False
+    id: Optional[int] = None
+    gorev_zamani: Optional[str] = None
+    gorev_basligi: Optional[str] = None
+    gorev_konusu: Optional[str] = None
+    durum: Optional[str] = None
+    silinmis_mi: Optional[bool] = False
 
 kullanicilar = []
 gorevler = []
@@ -67,7 +68,7 @@ def gorev_ekle(email: str, sifre: str, gorev: Gorev):
         pass
     return {"message": "Görev başarıyla eklendi"}
 
-@app.put("/gorev_guncelle/{gorev_id}")
+@app.patch("/gorev_guncelle/{gorev_id}")
 def gorev_guncelle(email: str, sifre: str, gorev_id: int, guncellenmis_gorev: Gorev):
     rol = giris_kontrol(email, sifre)
     if not rol:
